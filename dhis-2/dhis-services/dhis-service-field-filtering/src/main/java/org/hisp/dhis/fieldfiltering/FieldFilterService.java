@@ -128,6 +128,43 @@ public class FieldFilterService
         return objectMapper;
     }
 
+    /**
+     * Includes determines whether given path is included in the resulting
+     * ObjectNodes after applying {@link #toObjectNode(Object, List)}. This
+     * obviously requires that the actual data contains such path.
+     *
+     * FieldPath inclusion, exclusion as well as preset {@link FieldPreset.ALL}.
+     *
+     * TODO: add examples with exclusion and preset all. Especially for the fact
+     * that with filter=FieldPreset.ALL you will get true for any path even if
+     * this field is not part of your objects schema.
+     *
+     * For example given data
+     *
+     * {"event": "relationships": [] }
+     *
+     * both paths
+     *
+     * <code>event</code> <code>event.relationships</code>
+     *
+     * will result in true as they will be included in the filtered result.
+     *
+     * @param filter
+     * @param path
+     * @return
+     */
+    public boolean includes( List<FieldPath> filter, String path )
+    {
+        for ( FieldPath f : filter )
+        {
+            if ( f.toFullPath().equals( path ) )
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static class IgnoreJsonSerializerRefinementAnnotationInspector extends JacksonAnnotationIntrospector
     {
         /**
