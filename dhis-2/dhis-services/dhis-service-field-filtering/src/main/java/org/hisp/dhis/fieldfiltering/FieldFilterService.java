@@ -129,17 +129,19 @@ public class FieldFilterService
     }
 
     /**
-     * Includes determines whether given path is included in the resulting
-     * ObjectNodes after applying {@link #toObjectNode(Object, List)}. This
-     * obviously requires that the actual data contains such path.
+     * Determines whether given path is included in the resulting ObjectNodes
+     * after applying {@link #toObjectNode(Object, List)}. This obviously
+     * requires that the actual data contains such path.
      *
-     * FieldPath inclusion, exclusion as well as preset {@link FieldPreset.ALL}.
+     * FieldPath inclusion, exclusion as well as preset {@link FieldPreset.ALL}
+     * are taken into account.
      *
      * TODO: add examples with exclusion and preset all. Especially for the fact
      * that with filter=FieldPreset.ALL you will get true for any path even if
      * this field is not part of your objects schema.
      *
-     * For example given data
+     * // TODO this example isn't good as I need to show given List<FieldPath>
+     * and path For example given data
      *
      * {"event": "relationships": [] }
      *
@@ -153,7 +155,7 @@ public class FieldFilterService
      * @param path
      * @return
      */
-    public boolean includes( List<FieldPath> filter, String path )
+    public boolean filterIncludes( List<FieldPath> filter, String path )
     {
         for ( FieldPath f : filter )
         {

@@ -67,7 +67,7 @@ class FieldFilterServiceTest extends DhisControllerConvenienceTest
         // TODO write a nice assertion so we know whats in the actual result if our assertions fail
         assertAll(
             () -> assertTrue( json.has( "relationships" ) ),
-            () -> assertTrue( fieldFilterService.includes( fields, "relationships" ) ) );
+            () -> assertTrue( fieldFilterService.filterIncludes( fields, "relationships" ) ) );
     }
 
     @Test
@@ -89,8 +89,8 @@ class FieldFilterServiceTest extends DhisControllerConvenienceTest
         // TODO how to assert that it has relationships.deleted? do I have a nested field that is not an array :joy:
         assertAll(
             () -> assertTrue( json.has( "relationships" ) ),
-            () -> assertTrue( fieldFilterService.includes( fields, "relationships" ) ),
-            () -> assertTrue( fieldFilterService.includes( fields, "relationships.deleted" ) ) );
+            () -> assertTrue( fieldFilterService.filterIncludes( fields, "relationships" ) ),
+            () -> assertTrue( fieldFilterService.filterIncludes( fields, "relationships.deleted" ) ) );
     }
 
     @Test
