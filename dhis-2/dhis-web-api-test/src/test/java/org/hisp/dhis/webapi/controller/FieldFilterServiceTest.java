@@ -28,20 +28,22 @@
 package org.hisp.dhis.webapi.controller;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.hisp.dhis.event.EventStatus;
+import lombok.Data;
+
 import org.hisp.dhis.fieldfiltering.FieldFilterParser;
 import org.hisp.dhis.fieldfiltering.FieldFilterService;
 import org.hisp.dhis.fieldfiltering.FieldPath;
-import org.hisp.dhis.tracker.domain.Event;
-import org.hisp.dhis.tracker.domain.Relationship;
 import org.hisp.dhis.webapi.DhisControllerConvenienceTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 class FieldFilterServiceTest extends DhisControllerConvenienceTest
@@ -51,68 +53,138 @@ class FieldFilterServiceTest extends DhisControllerConvenienceTest
     FieldFilterService fieldFilterService;
 
     @Test
-    void includePathToRootField()
+    void shouldIncludePathGivenFilterContainsPresetAll()
     {
-        List<FieldPath> fields = FieldFilterParser.parse( "relationships" );
+        Root root = new Root( new First( new Second( new Third() ) ) );
+        List<FieldPath> filter = FieldFilterParser.parse( "*" );
 
-        Relationship relationship = Relationship.builder()
-            .relationship( "relationshipUID" )
-            .build();
-        Event event = Event.builder()
-            .relationships( List.of( relationship ) )
-            .build();
-
-        ObjectNode json = fieldFilterService.toObjectNode( event, fields );
-
-        // TODO write a nice assertion so we know whats in the actual result if our assertions fail
-        assertAll(
-            () -> assertTrue( json.has( "relationships" ) ),
-            () -> assertTrue( fieldFilterService.filterIncludes( fields, "relationships" ) ) );
+        assertAll( "filterIncludes should match what's included in the filtered JSON",
+            () -> assertJSONIncludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ),
+                "first.second.third" ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first" ) ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first.second" ) ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first.second.third" ) ) );
     }
 
     @Test
-    void includePathToNestedField()
+    void shouldIncludeChildPathsGivenFilterContainsParent()
     {
-        List<FieldPath> fields = FieldFilterParser.parse( "relationships[deleted]" );
+        Root root = new Root( new First( new Second( new Third() ) ) );
+        List<FieldPath> filter = FieldFilterParser.parse( "first" );
 
-        Relationship relationship = Relationship.builder()
-            .relationship( "relationshipUID" )
-            .deleted( true )
-            .build();
-        Event event = Event.builder()
-            .relationships( List.of( relationship ) )
-            .build();
-
-        ObjectNode json = fieldFilterService.toObjectNode( event, fields );
-
-        // TODO write a nice assertion so we know whats in the actual result if our assertions fail
-        // TODO how to assert that it has relationships.deleted? do I have a nested field that is not an array :joy:
-        assertAll(
-            () -> assertTrue( json.has( "relationships" ) ),
-            () -> assertTrue( fieldFilterService.filterIncludes( fields, "relationships" ) ),
-            () -> assertTrue( fieldFilterService.filterIncludes( fields, "relationships.deleted" ) ) );
+        assertAll( "filterIncludes should match what's included in the filtered JSON",
+            () -> assertJSONIncludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ),
+                "first.second.third" ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first" ) ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first.second" ) ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first.second.third" ) ) );
     }
 
     @Test
-    void test()
+    void shouldExcludePathGivenFilterContainsExplicitExclusionOfPathDespitePresetAll()
     {
-        // TODO this combines preset and exclusion
-        List<FieldPath> fields = FieldFilterParser.parse( "*,!relationships" );
-        //        List<FieldPath> fields = FieldFilterParser.parse("*");
+        Root root = new Root( new First( new Second( new Third() ) ) );
+        List<FieldPath> filter = FieldFilterParser.parse( "*,first[second[!third]]" );
 
-        Relationship relationship = Relationship.builder()
-            .relationship( "relationshipUID" )
-            .deleted( true )
-            .build();
-        Event event = Event.builder()
-            .event( "eventUID" )
-            .status( EventStatus.SKIPPED )
-            .relationships( List.of( relationship ) )
-            .build();
+        assertAll( "filterIncludes should match what's included in the filtered JSON",
+            () -> assertJSONIncludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ),
+                "first.second" ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first" ) ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first.second" ) ),
+            () -> assertJSONExcludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ),
+                "first.second.third" ),
+            () -> assertFalse( fieldFilterService.filterIncludes( filter, "first.second.third" ) ) );
+    }
 
-        ObjectNode jsonNodes = fieldFilterService.toObjectNode( event, fields );
+    @Test
+    void shouldExcludeChildPathGivenFilterContainsExclusionOfChildrenUsingPresetAll()
+    {
+        Root root = new Root( new First( new Second( new Third() ) ) );
+        List<FieldPath> filter = FieldFilterParser.parse( "first[second[!*]]" );
 
-        System.out.println( jsonNodes );
+        assertAll( "filterIncludes should match what's included in the filtered JSON",
+            () -> assertJSONIncludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ),
+                "first.second" ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first" ) ),
+            () -> assertTrue( fieldFilterService.filterIncludes( filter, "first.second" ) ),
+            () -> assertJSONExcludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ),
+                "first.second.third" ),
+            () -> assertFalse( fieldFilterService.filterIncludes( filter, "first.second.third" ) ) );
+    }
 
+    @Test
+    void shouldExcludeChildPathGivenFilterContainsExclusionOfAParentDespiteDirectParentBeingIncluded()
+    {
+        Root root = new Root( new First( new Second( new Third() ) ) );
+        List<FieldPath> filter = FieldFilterParser.parse( "!first,first[second]" );
+
+        assertAll( "filterIncludes should match what's included in the filtered JSON",
+            () -> assertJSONExcludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ), "first" ),
+            () -> assertFalse( fieldFilterService.filterIncludes( filter, "first" ) ),
+            () -> assertFalse( fieldFilterService.filterIncludes( filter, "first.second" ) ),
+            () -> assertFalse( fieldFilterService.filterIncludes( filter, "first.second.third" ) ) );
+    }
+
+    @Test
+    void shouldExcludePathGivenFilterContainsExplicitExclusionOfPathDespiteExplicitInclusionOfPath()
+    {
+        Root root = new Root( new First( new Second( new Third() ) ) );
+        List<FieldPath> filter = FieldFilterParser.parse( "first,!first" );
+
+        assertAll( "filterIncludes should match what's included in the filtered JSON",
+            () -> assertJSONExcludes( fieldFilterService.toObjectNode( root, new ArrayList<>( filter ) ), "first" ),
+            () -> assertFalse( fieldFilterService.filterIncludes( filter, "first" ) ) );
+    }
+
+    void assertJSONIncludes( ObjectNode json, String path )
+    {
+        String jsonPtr = toJSONPointer( path );
+        assertFalse( json.at( jsonPtr ).isMissingNode(),
+            () -> String.format( "Path '%s' (JSON ptr '%s') not found in JSON %s", path, jsonPtr, json ) );
+    }
+
+    void assertJSONExcludes( ObjectNode json, String path )
+    {
+        String jsonPtr = toJSONPointer( path );
+        assertTrue( json.at( jsonPtr ).isMissingNode(),
+            () -> String.format( "Path '%s' (JSON ptr '%s') found in JSON %s", path, jsonPtr, json ) );
+    }
+
+    private static String toJSONPointer( String path )
+    {
+        return "/" + path.replace( ".", "/" );
+    }
+
+    /**
+     * Sample classes used to build nested JSON we can filter using the
+     * {@link FieldFilterService}.
+     */
+    @Data
+    private static class Root
+    {
+        @JsonProperty
+        private final First first;
+
+    }
+
+    @Data
+    private static class First
+    {
+        @JsonProperty
+        private final Second second;
+    }
+
+    @Data
+    private static class Second
+    {
+        @JsonProperty
+        private final Third third;
+    }
+
+    @Data
+    private static class Third
+    {
+        @JsonProperty
+        private final String value = "3";
     }
 }

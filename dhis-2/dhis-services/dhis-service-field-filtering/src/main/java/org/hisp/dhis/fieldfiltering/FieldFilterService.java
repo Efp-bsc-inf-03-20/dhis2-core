@@ -136,9 +136,10 @@ public class FieldFilterService
      * FieldPath inclusion, exclusion as well as preset {@link FieldPreset.ALL}
      * are taken into account.
      *
-     * TODO: add examples with exclusion and preset all. Especially for the fact
-     * that with filter=FieldPreset.ALL you will get true for any path even if
-     * this field is not part of your objects schema.
+     * // TODO: this does not yet support Attribute UIDs TODO: add examples with
+     * exclusion and preset all. Especially for the fact that with
+     * filter=FieldPreset.ALL you will get true for any path even if this field
+     * is not part of your objects schema.
      *
      * // TODO this example isn't good as I need to show given List<FieldPath>
      * and path For example given data
@@ -157,12 +158,35 @@ public class FieldFilterService
      */
     public boolean filterIncludes( List<FieldPath> filter, String path )
     {
+        boolean presetAll = false;
+        boolean isExplicitlyIncluded = false;
+        boolean isParentExplicitlyIncluded = false;
+
         for ( FieldPath f : filter )
         {
-            if ( f.toFullPath().equals( path ) )
+            if ( f.isPreset() && FieldPreset.ALL.equals( f.getName() ) )
             {
-                return true;
+                presetAll = true;
             }
+            else if ( f.toFullPath().equals( path ) )
+            {
+                if ( f.isExclude() )
+                {
+                    return false;
+                }
+                isExplicitlyIncluded = true;
+            }
+            else if ( path.startsWith( f.toFullPath() ) )
+            {
+                // TODO parent included/excluded
+                // TODO direct parent vs more distant parent
+                isParentExplicitlyIncluded = true;
+            }
+        }
+
+        if ( presetAll || isExplicitlyIncluded )
+        {
+            return true;
         }
         return false;
     }
