@@ -27,20 +27,22 @@
  */
 package org.hisp.dhis.webapi.controller.tracker.export;
 
+import org.hisp.dhis.program.ProgramInstance;
 import org.hisp.dhis.webapi.controller.tracker.view.Enrollment;
 import org.hisp.dhis.webapi.controller.tracker.view.InstantMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper( uses = {
-    Dxf2RelationshipMapper.class,
+    RelationshipMapper.class,
     AttributeMapper.class,
     NoteMapper.class,
     EventMapper.class,
     InstantMapper.class,
     UserMapper.class } )
-interface EnrollmentMapper extends ViewMapper<org.hisp.dhis.dxf2.events.enrollment.Enrollment, Enrollment>
+interface EnrollmentMapper extends ViewMapper<ProgramInstance, Enrollment>
 {
+    // TODO(ivo) fix mapper; potentially reuse mappers created for relationship; keep in mind that the relationship items can be slightly different than the top level types
     @Mapping( target = "enrollment", source = "enrollment" )
     @Mapping( target = "createdAt", source = "created" )
     @Mapping( target = "createdAtClient", source = "createdAtClient" )
