@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,35 +25,40 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.trackedentity;
+package org.hisp.dhis.tracker.enrollment;
 
-import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
-import org.hisp.dhis.dxf2.events.TrackedEntityInstanceParams;
-import org.hisp.dhis.feedback.ForbiddenException;
-import org.hisp.dhis.feedback.NotFoundException;
-import org.hisp.dhis.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.trackedentity.TrackedEntityInstanceQueryParams;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
-public interface TrackedEntityService
+import org.hisp.dhis.tracker.event.EventFields;
+
+@Getter
+@ToString
+@EqualsAndHashCode
+public class EnrollmentFields
 {
-    /**
-     * Fetches {@see TrackedEntityInstance}s based on the specified parameters.
-     *
-     * @param queryParams a {@see TrackedEntityInstanceQueryParams} instance
-     *        with the query parameters
-     * @param params a {@see TrackedEntityInstanceParams} instance containing
-     *        the directives for how much data should be fetched (e.g.
-     *        Enrollments, Events, Relationships)
-     * @return {@see TrackedEntityInstance}s
-     */
-    List<TrackedEntityInstance> getTrackedEntities( TrackedEntityInstanceQueryParams queryParams,
-        TrackedEntityInstanceParams params );
 
-    int getTrackedEntityCount( TrackedEntityInstanceQueryParams params, boolean skipAccessValidation,
-        boolean skipSearchScopeValidation );
+    boolean includesRelationships;
 
-    TrackedEntityInstance getTrackedEntity( String uid, String programIdentifier, TrackedEntityFields fields )
-        throws NotFoundException,
-        ForbiddenException;
+    boolean includesAttributes;
+
+    Optional<EventFields> eventFields;
+
+    public EnrollmentFields( Predicate<String> includesFields )
+    {
+        this.includesAttributes = includesFields.test( "attributes" );
+        this.includesRelationships = includesFields.test( "relationships" );
+        if ( includesFields.test( "events" ) )
+        {
+            this.eventFields = Optional.of( new EventFields( s -> includesFields.test( "events." + s ) ) );
+        }
+        else
+        {
+            this.eventFields = Optional.empty();
+        }
+    }
 }

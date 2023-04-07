@@ -532,8 +532,7 @@ public class DefaultTrackedEntityService implements TrackedEntityService
     }
 
     @Override
-    public TrackedEntityInstance getTrackedEntity( String uid, String programIdentifier,
-        TrackedEntityInstanceParams params )
+    public TrackedEntityInstance getTrackedEntity( String uid, String programIdentifier, TrackedEntityFields fields )
         throws NotFoundException,
         ForbiddenException
     {
@@ -569,12 +568,12 @@ public class DefaultTrackedEntityService implements TrackedEntityService
                 throw new ForbiddenException( TrackerOwnershipManager.OWNERSHIP_ACCESS_DENIED );
             }
         }
-        return getTei( daoTrackedEntityInstance, programIdentifier, params, user );
+        return getTei( daoTrackedEntityInstance, programIdentifier, fields, user );
     }
 
     private TrackedEntityInstance getTei( TrackedEntityInstance daoTrackedEntityInstance,
         String programIdentifier,
-        TrackedEntityInstanceParams params, User user )
+        TrackedEntityFields fields, User user )
     {
         if ( daoTrackedEntityInstance == null )
         {
@@ -598,7 +597,7 @@ public class DefaultTrackedEntityService implements TrackedEntityService
         result.setLastUpdatedByUserInfo( daoTrackedEntityInstance.getLastUpdatedByUserInfo() );
         result.setGeometry( daoTrackedEntityInstance.getGeometry() );
 
-        if ( params.isIncludeRelationships() )
+        if ( fields.isIncludeRelationships() )
         {
             Set<RelationshipItem> items = new HashSet<>();
 
@@ -607,7 +606,7 @@ public class DefaultTrackedEntityService implements TrackedEntityService
                 org.hisp.dhis.relationship.Relationship daoRelationship = relationshipItem.getRelationship();
 
                 if ( trackerAccessManager.canRead( user, daoRelationship ).isEmpty()
-                    && (params.isIncludeDeleted() || !daoRelationship.isDeleted()) )
+                    && (fields.isIncludeDeleted() || !daoRelationship.isDeleted()) )
                 {
                     items.add( relationshipItem );
                 }
@@ -616,19 +615,19 @@ public class DefaultTrackedEntityService implements TrackedEntityService
             result.setRelationshipItems( items );
         }
 
-        if ( params.isIncludeEnrollments() )
+        if ( fields.isIncludeEnrollments() )
         {
             Set<ProgramInstance> programInstances = new HashSet<>();
 
             for ( ProgramInstance programInstance : daoTrackedEntityInstance.getProgramInstances() )
             {
                 if ( trackerAccessManager.canRead( user, programInstance, false ).isEmpty()
-                    && (params.isIncludeDeleted() || !programInstance.isDeleted()) )
+                    && (fields.isIncludeDeleted() || !programInstance.isDeleted()) )
                 {
                     Set<ProgramStageInstance> events = new HashSet<>();
                     for ( ProgramStageInstance programStageInstance : programInstance.getProgramStageInstances() )
                     {
-                        if ( params.isIncludeDeleted() || !programStageInstance.isDeleted() )
+                        if ( fields.isIncludeDeleted() || !programStageInstance.isDeleted() )
                         {
                             events.add( programStageInstance );
                         }
@@ -641,7 +640,7 @@ public class DefaultTrackedEntityService implements TrackedEntityService
             result.setProgramInstances( programInstances );
         }
 
-        if ( params.isIncludeProgramOwners() )
+        if ( fields.isIncludeProgramOwners() )
         {
             if ( StringUtils.isNotEmpty( programIdentifier ) )
             {

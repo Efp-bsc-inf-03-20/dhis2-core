@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,33 +27,50 @@
  */
 package org.hisp.dhis.tracker.trackedentity;
 
-import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
-import org.hisp.dhis.dxf2.events.TrackedEntityInstanceParams;
-import org.hisp.dhis.feedback.ForbiddenException;
-import org.hisp.dhis.feedback.NotFoundException;
-import org.hisp.dhis.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.trackedentity.TrackedEntityInstanceQueryParams;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
-public interface TrackedEntityService
+import org.hisp.dhis.tracker.enrollment.EnrollmentFields;
+
+@Getter
+@ToString
+@EqualsAndHashCode
+public class TrackedEntityFields
 {
-    /**
-     * Fetches {@see TrackedEntityInstance}s based on the specified parameters.
-     *
-     * @param queryParams a {@see TrackedEntityInstanceQueryParams} instance
-     *        with the query parameters
-     * @param params a {@see TrackedEntityInstanceParams} instance containing
-     *        the directives for how much data should be fetched (e.g.
-     *        Enrollments, Events, Relationships)
-     * @return {@see TrackedEntityInstance}s
-     */
-    List<TrackedEntityInstance> getTrackedEntities( TrackedEntityInstanceQueryParams queryParams,
-        TrackedEntityInstanceParams params );
 
-    int getTrackedEntityCount( TrackedEntityInstanceQueryParams params, boolean skipAccessValidation,
-        boolean skipSearchScopeValidation );
+    boolean includeRelationships;
 
-    TrackedEntityInstance getTrackedEntity( String uid, String programIdentifier, TrackedEntityFields fields )
-        throws NotFoundException,
-        ForbiddenException;
+    boolean includeAttributes;
+
+    boolean includeProgramOwners;
+
+    // TODO(ivo) this should not be part of fields but the class representing the request parameters. This fields class should then be part of the class representing the request parameters as fields is one request parameter.
+    boolean includeDeleted;
+
+    Optional<EnrollmentFields> enrollmentFields;
+
+    public TrackedEntityFields( Predicate<String> includesFields )
+    {
+        this.includeAttributes = includesFields.test( "attributes" );
+        this.includeRelationships = includesFields.test( "relationships" );
+        this.includeProgramOwners = includesFields.test( "programOwners" );
+        if ( includesFields.test( "enrollments" ) )
+        {
+            this.enrollmentFields = Optional
+                .of( new EnrollmentFields( s -> includesFields.test( "enrollments." + s ) ) );
+        }
+        else
+        {
+            this.enrollmentFields = Optional.empty();
+        }
+    }
+
+    public boolean isIncludeEnrollments()
+    {
+        return this.enrollmentFields.isPresent();
+    }
 }

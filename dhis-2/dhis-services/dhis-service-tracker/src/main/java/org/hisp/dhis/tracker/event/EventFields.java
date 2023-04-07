@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,35 +25,24 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.trackedentity;
+package org.hisp.dhis.tracker.event;
 
-import java.util.List;
+import java.util.function.Predicate;
 
-import org.hisp.dhis.dxf2.events.TrackedEntityInstanceParams;
-import org.hisp.dhis.feedback.ForbiddenException;
-import org.hisp.dhis.feedback.NotFoundException;
-import org.hisp.dhis.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.trackedentity.TrackedEntityInstanceQueryParams;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
-public interface TrackedEntityService
+@Getter
+@ToString
+@EqualsAndHashCode
+public class EventFields
 {
-    /**
-     * Fetches {@see TrackedEntityInstance}s based on the specified parameters.
-     *
-     * @param queryParams a {@see TrackedEntityInstanceQueryParams} instance
-     *        with the query parameters
-     * @param params a {@see TrackedEntityInstanceParams} instance containing
-     *        the directives for how much data should be fetched (e.g.
-     *        Enrollments, Events, Relationships)
-     * @return {@see TrackedEntityInstance}s
-     */
-    List<TrackedEntityInstance> getTrackedEntities( TrackedEntityInstanceQueryParams queryParams,
-        TrackedEntityInstanceParams params );
 
-    int getTrackedEntityCount( TrackedEntityInstanceQueryParams params, boolean skipAccessValidation,
-        boolean skipSearchScopeValidation );
+    boolean includesRelationships;
 
-    TrackedEntityInstance getTrackedEntity( String uid, String programIdentifier, TrackedEntityFields fields )
-        throws NotFoundException,
-        ForbiddenException;
+    public EventFields( Predicate<String> includesFields )
+    {
+        this.includesRelationships = includesFields.test( "relationships" );
+    }
 }

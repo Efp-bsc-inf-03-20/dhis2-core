@@ -58,6 +58,7 @@ import org.hisp.dhis.fieldfiltering.FieldFilterParser;
 import org.hisp.dhis.fieldfiltering.FieldFilterService;
 import org.hisp.dhis.fieldfiltering.FieldPath;
 import org.hisp.dhis.trackedentity.TrackedEntityInstanceQueryParams;
+import org.hisp.dhis.tracker.trackedentity.TrackedEntityFields;
 import org.hisp.dhis.tracker.trackedentity.TrackedEntityService;
 import org.hisp.dhis.webapi.controller.event.webrequest.PagingWrapper;
 import org.hisp.dhis.webapi.controller.tracker.export.fieldsmapper.TrackedEntityFieldsParamMapper;
@@ -199,10 +200,11 @@ public class TrackerTrackedEntitiesExportController
         throws ForbiddenException,
         NotFoundException
     {
-        TrackedEntityInstanceParams trackedEntityInstanceParams = fieldsMapper.map( fields );
+        TrackedEntityFields includesFields = new TrackedEntityFields(
+            s -> fieldFilterService.filterIncludes( TrackedEntity.class, fields, s ) );
 
         TrackedEntity trackedEntity = TRACKED_ENTITY_MAPPER.from(
-            trackedEntityService.getTrackedEntity( id, program, trackedEntityInstanceParams ) );
+            trackedEntityService.getTrackedEntity( id, program, includesFields ) );
         return ResponseEntity.ok( fieldFilterService.toObjectNode( trackedEntity, fields ) );
     }
 
@@ -215,10 +217,12 @@ public class TrackerTrackedEntitiesExportController
         ForbiddenException,
         NotFoundException
     {
-        TrackedEntityInstanceParams trackedEntityInstanceParams = fieldsMapper.map( CSV_FIELDS );
+        //        TrackedEntityInstanceParams trackedEntityInstanceParams = fieldsMapper.map( CSV_FIELDS );
+        TrackedEntityFields includesFields = new TrackedEntityFields(
+            s -> fieldFilterService.filterIncludes( TrackedEntity.class, CSV_FIELDS, s ) );
 
         TrackedEntity trackedEntity = TRACKED_ENTITY_MAPPER.from(
-            trackedEntityService.getTrackedEntity( id, program, trackedEntityInstanceParams ) );
+            trackedEntityService.getTrackedEntity( id, program, includesFields ) );
 
         OutputStream outputStream = response.getOutputStream();
         response.setContentType( CONTENT_TYPE_CSV );
