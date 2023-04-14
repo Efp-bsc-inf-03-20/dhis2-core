@@ -78,6 +78,7 @@ import org.hisp.dhis.analytics.analyze.ExecutionPlanStore;
 import org.hisp.dhis.analytics.table.PartitionUtils;
 import org.hisp.dhis.analytics.util.AnalyticsSqlUtils;
 import org.hisp.dhis.analytics.util.AnalyticsUtils;
+import org.hisp.dhis.common.DimensionItemType;
 import org.hisp.dhis.common.DimensionType;
 import org.hisp.dhis.common.DimensionalItemObject;
 import org.hisp.dhis.common.DimensionalObject;
@@ -469,8 +470,18 @@ public class JdbcAnalyticsManager
             {
                 String col = quoteAlias( dim.getDimensionName() );
 
-                sql += sqlHelper.whereAnd() + " " + col + " in ("
-                    + getQuotedCommaDelimitedString( getUids( dim.getItems() ) ) + ") ";
+                if ( hasCategoryOptions( dim.getItems() ) )
+                {
+                    sql += sqlHelper.whereAnd() + " (" + col + " in ("
+                        + getQuotedCommaDelimitedString( getUids( dim.getItems() ) )
+                        + ") or " + col + " is null )";
+                }
+                else
+                {
+                    sql += sqlHelper.whereAnd() + " " + col + " in ("
+                        + getQuotedCommaDelimitedString( getUids( dim.getItems() ) )
+                        + ") ";
+                }
             }
         }
 
@@ -494,7 +505,16 @@ public class JdbcAnalyticsManager
                     {
                         String col = quoteAlias( filter.getDimensionName() );
 
-                        sql += col + " in (" + getQuotedCommaDelimitedString( getUids( filter.getItems() ) ) + ") or ";
+                        if ( hasCategoryOptions( filter.getItems() ) )
+                        {
+                            sql += "(" + col + " in (" + getQuotedCommaDelimitedString( getUids( filter.getItems() ) )
+                                + ") or " + col + " is null ) or ";
+                        }
+                        else
+                        {
+                            sql += col + " in (" + getQuotedCommaDelimitedString( getUids( filter.getItems() ) )
+                                + ") or ";
+                        }
                     }
                 }
 
@@ -581,6 +601,21 @@ public class JdbcAnalyticsManager
         }
 
         return sql;
+    }
+
+    /**
+     * Returns true when all dimension items are category options or category
+     * groups
+     *
+     * @param items the {@link List<DimensionalItemObject>}.
+     * @return
+     */
+
+    private boolean hasCategoryOptions( List<DimensionalItemObject> items )
+    {
+        return items.stream()
+            .allMatch( it -> it.getDimensionItemType() == DimensionItemType.CATEGORY_OPTION
+                || it.getDimensionItemType() == DimensionItemType.CATEGORY_OPTION_GROUP );
     }
 
     /**
