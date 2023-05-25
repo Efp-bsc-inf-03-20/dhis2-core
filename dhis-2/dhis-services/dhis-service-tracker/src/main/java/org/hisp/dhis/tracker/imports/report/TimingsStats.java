@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 
 import lombok.Data;
 
+import org.hisp.dhis.common.OpenApi;
 import org.hisp.dhis.commons.timer.SystemTimer;
 import org.hisp.dhis.commons.timer.Timer;
 
@@ -45,6 +46,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @author Luciano Fiandesio
  */
+@OpenApi.Shared( name = "TrackerTimingStats" )
 @Data
 public class TimingsStats
 {
@@ -125,7 +127,6 @@ public class TimingsStats
      *
      * @param timedOperation the operation name to place in the timers map
      * @param supplier ths Supplier to execute
-     *
      * @return the result of the Supplier invocation
      */
     public <T> T exec( String timedOperation, Supplier<T> supplier )

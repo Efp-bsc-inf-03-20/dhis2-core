@@ -37,6 +37,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import org.hisp.dhis.common.OpenApi;
 import org.hisp.dhis.webapi.controller.tracker.view.Enrollment;
 import org.hisp.dhis.webapi.controller.tracker.view.Event;
 import org.hisp.dhis.webapi.controller.tracker.view.Relationship;
@@ -50,6 +51,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  *
  * @author Morten Olav Hansen <mortenoh@gmail.com>
  */
+@OpenApi.Shared( name = "TrackerImportBody" )
 @Getter
 @ToString
 @EqualsAndHashCode

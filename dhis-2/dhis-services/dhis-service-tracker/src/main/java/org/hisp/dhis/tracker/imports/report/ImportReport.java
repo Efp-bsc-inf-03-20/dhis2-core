@@ -35,6 +35,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hisp.dhis.common.OpenApi;
 import org.hisp.dhis.tracker.imports.TrackerType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,6 +49,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @author Luciano Fiandesio
  */
+@OpenApi.Shared( name = "TrackerImportReport" )
 @Getter
 @Builder
 @AllArgsConstructor( access = AccessLevel.PRIVATE )
@@ -112,7 +114,6 @@ public class ImportReport
      * @param validationReport The validation report
      * @param timingsStats The timing stats
      * @param bundleSize The sum of all bundle objects
-     *
      */
     public static ImportReport withValidationErrors(
         ValidationReport validationReport,
@@ -136,7 +137,6 @@ public class ImportReport
      * @param message The error message
      * @param validationReport The validation report if available
      * @param timingsStats The timing stats if available
-     *
      */
     public static ImportReport withError( String message, ValidationReport validationReport,
         TimingsStats timingsStats )

@@ -30,9 +30,12 @@ package org.hisp.dhis.tracker.imports.report;
 import lombok.Builder;
 import lombok.Value;
 
+import org.hisp.dhis.common.OpenApi;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@OpenApi.Shared( name = "TrackerError" )
 @Value
 @Builder
 public class Error

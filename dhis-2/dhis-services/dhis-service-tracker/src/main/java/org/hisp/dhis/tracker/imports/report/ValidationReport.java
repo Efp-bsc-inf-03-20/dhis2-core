@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import org.hisp.dhis.common.OpenApi;
 import org.hisp.dhis.tracker.imports.validation.Validation;
 import org.hisp.dhis.tracker.imports.validation.ValidationResult;
 
@@ -44,6 +45,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author Morten Olav Hansen <mortenoh@gmail.com>
  */
+@OpenApi.Shared( name = "TrackerValidationReport" )
 @ToString
 @EqualsAndHashCode
 public class ValidationReport

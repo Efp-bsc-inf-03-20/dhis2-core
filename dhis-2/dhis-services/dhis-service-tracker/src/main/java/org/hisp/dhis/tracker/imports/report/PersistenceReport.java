@@ -34,6 +34,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import org.hisp.dhis.common.OpenApi;
 import org.hisp.dhis.tracker.imports.TrackerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -45,6 +46,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @author Morten Olav Hansen <mortenoh@gmail.com>
  */
+@OpenApi.Shared( name = "TrackerPersistenceReport" )
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
