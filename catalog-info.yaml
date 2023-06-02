@@ -1,0 +1,10 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: dhis2-core
+  annotations:
+    github.com/project-slug: dhis2/dhis2-core
+spec:
+  type: api
+  owner: platform-backend
+  lifecycle: prod
