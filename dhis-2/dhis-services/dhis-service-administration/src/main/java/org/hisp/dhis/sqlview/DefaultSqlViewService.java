@@ -174,8 +174,34 @@ public class DefaultSqlViewService
 
     @Override
     @Transactional( readOnly = true )
-    public Grid getSqlViewGrid( SqlView sqlView, Map<String, String> criteria, Map<String, String> variables,
-        List<String> filters, List<String> fields )
+    public Grid getSqlViewGridReadOnly(
+        SqlView sqlView,
+        Map<String, String> criteria,
+        Map<String, String> variables,
+        List<String> filters,
+        List<String> fields )
+    {
+        return getGridData( sqlView, criteria, variables, filters, fields );
+    }
+
+    @Override
+    @Transactional
+    public Grid getSqlViewGridWritesAllowed(
+        SqlView sqlView,
+        Map<String, String> criteria,
+        Map<String, String> variables,
+        List<String> filters,
+        List<String> fields )
+    {
+        return getGridData( sqlView, criteria, variables, filters, fields );
+    }
+
+    private Grid getGridData(
+        SqlView sqlView,
+        Map<String, String> criteria,
+        Map<String, String> variables,
+        List<String> filters,
+        List<String> fields )
     {
         canAccess( sqlView );
         validateSqlView( sqlView, criteria, variables );
@@ -184,13 +210,14 @@ public class DefaultSqlViewService
         grid.setTitle( sqlView.getName() );
         grid.setSubtitle( sqlView.getDescription() );
 
-        log.info( String.format( "Retrieving data for SQL view: '%s'", sqlView.getUid() ) );
+        log.info( String.format( "Retrieving data for SQL view: '%s'",
+            sqlView.getUid() ) );
 
-        String sql = sqlView.isQuery() ? getSqlForQuery( sqlView, criteria, variables, filters, fields )
+        String sql = sqlView.isQuery()
+            ? getSqlForQuery( sqlView, criteria, variables, filters, fields )
             : getSqlForView( sqlView, criteria, filters, fields );
 
         sqlViewStore.populateSqlViewGrid( grid, sql );
-
         return grid;
     }
 
