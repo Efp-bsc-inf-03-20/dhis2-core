@@ -133,7 +133,6 @@ public class JCloudsFileResourceContentStore implements FileResourceContentStore
             configurationProvider.getProperty(ConfigurationKey.FILESTORE_ENDPOINT),
             configurationProvider.getProperty(ConfigurationKey.FILESTORE_CONTAINER));
 
-
     Pair<Credentials, Properties> providerConfig =
         configureForProvider(
             config,
@@ -152,7 +151,7 @@ public class JCloudsFileResourceContentStore implements FileResourceContentStore
         ContextBuilder.newBuilder(config.provider)
             .credentials(providerConfig.getLeft().identity, providerConfig.getLeft().credential)
             .overrides(providerConfig.getRight())
-//            .overrides(properties)
+            //            .overrides(properties)
             .build(BlobStoreContext.class);
 
     blobStore = blobStoreContext.getBlobStore();
@@ -418,7 +417,7 @@ public class JCloudsFileResourceContentStore implements FileResourceContentStore
   }
 
   private Pair<Credentials, Properties> configureForProvider(
-          BlobStoreProperties properties, String identity, String secret) {
+      BlobStoreProperties properties, String identity, String secret) {
     Properties overrides = new Properties();
     Credentials credentials = new Credentials("Unused", "Unused");
 
