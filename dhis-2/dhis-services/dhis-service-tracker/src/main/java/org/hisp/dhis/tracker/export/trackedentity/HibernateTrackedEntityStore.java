@@ -333,6 +333,8 @@ class HibernateTrackedEntityStore extends SoftDeleteHibernateObjectStore<Tracked
                 "TE.uid",
                 "TE.created",
                 "TE.lastupdated",
+                "TE.createdatclient",
+                "TE.lastupdatedatclient",
                 "TE.inactive",
                 "TE.potentialduplicate",
                 "TE.deleted",
@@ -406,6 +408,8 @@ class HibernateTrackedEntityStore extends SoftDeleteHibernateObjectStore<Tracked
                 "TE.uid as uid",
                 "TE.created as created",
                 "TE.lastupdated as lastupdated",
+                "TE.createdatclient as createdatclient",
+                "TE.lastupdatedatclient as lastupdatedatclient",
                 "TE.inactive as inactive",
                 "TE.potentialduplicate as potentialduplicate",
                 "TE.deleted as deleted",
@@ -702,7 +706,7 @@ class HibernateTrackedEntityStore extends SoftDeleteHibernateObjectStore<Tracked
                 ? "PO.organisationunitid "
                 : "TE.organisationunitid ");
 
-    if (!params.hasOrganisationUnits()) {
+    if (!params.hasAccessibleOrgUnits()) {
       return orgUnits.toString();
     }
 
@@ -711,7 +715,7 @@ class HibernateTrackedEntityStore extends SoftDeleteHibernateObjectStore<Tracked
 
       orgUnits.append("AND (");
 
-      for (OrganisationUnit organisationUnit : params.getOrgUnits()) {
+      for (OrganisationUnit organisationUnit : params.getAccessibleOrgUnits()) {
 
         OrganisationUnit ou = organisationUnitStore.getByUid(organisationUnit.getUid());
         if (ou != null) {
@@ -723,7 +727,7 @@ class HibernateTrackedEntityStore extends SoftDeleteHibernateObjectStore<Tracked
     } else if (!params.isOrganisationUnitMode(OrganisationUnitSelectionMode.ALL)) {
       orgUnits
           .append("AND OU.organisationunitid IN (")
-          .append(getCommaDelimitedString(getIdentifiers(params.getOrgUnits())))
+          .append(getCommaDelimitedString(getIdentifiers(params.getAccessibleOrgUnits())))
           .append(") ");
     }
 

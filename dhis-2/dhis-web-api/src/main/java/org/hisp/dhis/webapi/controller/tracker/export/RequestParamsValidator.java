@@ -30,6 +30,9 @@ package org.hisp.dhis.webapi.controller.tracker.export;
 import static org.hisp.dhis.common.DimensionalObject.DIMENSION_NAME_SEP;
 import static org.hisp.dhis.common.OrganisationUnitSelectionMode.ACCESSIBLE;
 import static org.hisp.dhis.common.OrganisationUnitSelectionMode.CAPTURE;
+import static org.hisp.dhis.common.OrganisationUnitSelectionMode.CHILDREN;
+import static org.hisp.dhis.common.OrganisationUnitSelectionMode.DESCENDANTS;
+import static org.hisp.dhis.common.OrganisationUnitSelectionMode.SELECTED;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,8 +58,8 @@ import org.hisp.dhis.webapi.controller.event.webrequest.OrderCriteria;
  * RequestParamUtils are functions used to parse and transform tracker request parameters. This
  * class is intended to only house functions without any dependencies on services or components.
  */
-public class RequestParamUtils {
-  private RequestParamUtils() {
+public class RequestParamsValidator {
+  private RequestParamsValidator() {
     throw new IllegalStateException("Utility class");
   }
 
@@ -154,30 +157,12 @@ public class RequestParamUtils {
   }
 
   /**
-   * Validates that no org unit is present if the ou mode is ACCESSIBLE or CAPTURE. If it is, an
-   * exception will be thrown.
-   *
-   * @param orgUnits
-   * @param orgUnitMode
-   * @throws BadRequestException
-   */
-  public static void validateOrgUnitParams(
-      Set<UID> orgUnits, OrganisationUnitSelectionMode orgUnitMode) throws BadRequestException {
-    if (!orgUnits.isEmpty() && (orgUnitMode == ACCESSIBLE || orgUnitMode == CAPTURE)) {
-      throw new BadRequestException(
-          String.format(
-              "orgUnitMode %s cannot be used with orgUnits. Please remove the orgUnit parameter and try again.",
-              orgUnitMode));
-    }
-  }
-
-  /**
    * Validate the {@code order} request parameter in tracker exporters. Allowed order values are
    * {@code supportedFieldNames} and UIDs which represent {@code uidMeaning}. Every field name or
    * UID can be specified at most once.
    */
   public static void validateOrderParams(
-      Set<String> supportedFieldNames, String uidMeaning, List<OrderCriteria> order)
+      List<OrderCriteria> order, Set<String> supportedFieldNames, String uidMeaning)
       throws BadRequestException {
     if (order == null || order.isEmpty()) {
       return;
@@ -192,15 +177,22 @@ public class RequestParamUtils {
             .collect(Collectors.toSet());
     invalidOrderComponents.removeAll(uids);
 
+    String errorSuffix =
+        String.format(
+            "Supported are %s UIDs and fields '%s'. All of which can at most be specified once.",
+            uidMeaning, String.join(", ", supportedFieldNames.stream().sorted().toList()));
     if (!invalidOrderComponents.isEmpty()) {
       throw new BadRequestException(
           String.format(
-              "order parameter is invalid. '%s' are either unsupported fields and/or invalid UID(s). Supported are %s UIDs and fields '%s'. All of which can at most be specified once.",
-              String.join(", ", invalidOrderComponents),
-              uidMeaning,
-              String.join(", ", supportedFieldNames.stream().sorted().toList())));
+              "order parameter is invalid. Cannot order by '%s'. %s",
+              String.join(", ", invalidOrderComponents), errorSuffix));
     }
 
+    validateOrderParamsContainNoDuplicates(order, errorSuffix);
+  }
+
+  private static void validateOrderParamsContainNoDuplicates(
+      List<OrderCriteria> order, String errorSuffix) throws BadRequestException {
     Set<String> duplicateOrderComponents =
         order.stream()
             .map(OrderCriteria::getField)
@@ -214,11 +206,38 @@ public class RequestParamUtils {
     if (!duplicateOrderComponents.isEmpty()) {
       throw new BadRequestException(
           String.format(
-              "order parameter is invalid. '%s' are repeated. Supported are %s UIDs and fields '%s'. All of which can at most be specified once.",
-              String.join(", ", duplicateOrderComponents),
-              uidMeaning,
-              String.join(", ", supportedFieldNames.stream().sorted().toList())));
+              "order parameter is invalid. '%s' are repeated. %s",
+              String.join(", ", duplicateOrderComponents), errorSuffix));
     }
+  }
+
+  /**
+   * Validate the {@code order} request parameter in tracker exporters. Allowed order values are
+   * {@code supportedFieldNames}. Every field name can be specified at most once. If the endpoint
+   * supports field names and UIDs use {@link #validateOrderParams(List, Set, String)}.
+   */
+  public static void validateOrderParams(List<OrderCriteria> order, Set<String> supportedFieldNames)
+      throws BadRequestException {
+    if (order == null || order.isEmpty()) {
+      return;
+    }
+
+    Set<String> invalidOrderComponents =
+        order.stream().map(OrderCriteria::getField).collect(Collectors.toSet());
+    invalidOrderComponents.removeAll(supportedFieldNames);
+
+    String errorSuffix =
+        String.format(
+            "Supported fields are '%s'. All of which can at most be specified once.",
+            String.join(", ", supportedFieldNames.stream().sorted().toList()));
+    if (!invalidOrderComponents.isEmpty()) {
+      throw new BadRequestException(
+          String.format(
+              "order parameter is invalid. Cannot order by '%s'. %s",
+              String.join(", ", invalidOrderComponents), errorSuffix));
+    }
+
+    validateOrderParamsContainNoDuplicates(order, errorSuffix);
   }
 
   /**
@@ -280,5 +299,73 @@ public class RequestParamUtils {
     } else {
       throw new BadRequestException("Query item or filter is invalid: " + input);
     }
+  }
+
+  /**
+   * Validates that no org unit is present if the ou mode is ACCESSIBLE or CAPTURE. If it is, an
+   * exception will be thrown. If the org unit mode is not defined, SELECTED will be used by default
+   * if an org unit is present. Otherwise, ACCESSIBLE will be the default.
+   *
+   * @param orgUnits list of org units to be validated
+   * @return a valid org unit mode
+   * @throws BadRequestException if a wrong combination of org unit and org unit mode supplied
+   */
+  public static OrganisationUnitSelectionMode validateOrgUnitMode(
+      Set<UID> orgUnits, OrganisationUnitSelectionMode orgUnitMode) throws BadRequestException {
+
+    if (orgUnitMode == null) {
+      return orgUnits.isEmpty() ? ACCESSIBLE : SELECTED;
+    }
+
+    if (!orgUnits.isEmpty() && (orgUnitMode == ACCESSIBLE || orgUnitMode == CAPTURE)) {
+      throw new BadRequestException(
+          String.format(
+              "orgUnitMode %s cannot be used with orgUnits. Please remove the orgUnit parameter and try again.",
+              orgUnitMode));
+    }
+
+    if ((orgUnitMode == CHILDREN || orgUnitMode == SELECTED || orgUnitMode == DESCENDANTS)
+        && orgUnits.isEmpty()) {
+      throw new BadRequestException(
+          String.format(
+              "At least one org unit is required for orgUnitMode: %s. Please add an orgUnit or use a different orgUnitMode.",
+              orgUnitMode));
+    }
+
+    return orgUnitMode;
+  }
+
+  /**
+   * Validates that the org unit is not present if the ou mode is ACCESSIBLE or CAPTURE. If it is,
+   * an exception will be thrown. If the org unit mode is not defined, SELECTED will be used by
+   * default if an org unit is present. Otherwise, ACCESSIBLE will be the default.
+   *
+   * @param orgUnit the org unit to validate
+   * @return a valid org unit mode
+   * @throws BadRequestException if a wrong combination of org unit and org unit mode supplied
+   */
+  public static OrganisationUnitSelectionMode validateOrgUnitMode(
+      UID orgUnit, OrganisationUnitSelectionMode orgUnitMode) throws BadRequestException {
+
+    if (orgUnitMode == null) {
+      orgUnitMode = orgUnit != null ? SELECTED : ACCESSIBLE;
+    }
+
+    if ((orgUnitMode == ACCESSIBLE || orgUnitMode == CAPTURE) && orgUnit != null) {
+      throw new BadRequestException(
+          String.format(
+              "orgUnitMode %s cannot be used with orgUnits. Please remove the orgUnit parameter and try again.",
+              orgUnitMode));
+    }
+
+    if ((orgUnitMode == CHILDREN || orgUnitMode == SELECTED || orgUnitMode == DESCENDANTS)
+        && orgUnit == null) {
+      throw new BadRequestException(
+          String.format(
+              "orgUnit is required for orgUnitMode: %s. Please add an orgUnit or use a different orgUnitMode.",
+              orgUnitMode));
+    }
+
+    return orgUnitMode;
   }
 }

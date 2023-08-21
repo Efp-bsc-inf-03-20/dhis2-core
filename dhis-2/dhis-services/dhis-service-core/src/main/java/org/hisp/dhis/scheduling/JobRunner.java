@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,27 +25,22 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.configuration;
-
-import org.hisp.dhis.condition.RedisEnabledCondition;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.session.data.redis.config.ConfigureRedisAction;
-import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+package org.hisp.dhis.scheduling;
 
 /**
- * Configuration registered if {@link RedisEnabledCondition} matches to true. Redis backed Spring
- * Session will be configured due to the {@link EnableRedisHttpSession} annotation.
+ * Motivation of this separate API is purely to decouple and allow for composition of services via
+ * spring.
  *
- * @author Ameen Mohamed
+ * <p>The {@link JobSchedulerService#executeNow(String)} needs access to synchronously run a job in
+ * a test setup. This is when it wants to call {@link #runDueJob(JobConfiguration)} directly.
+ * Whereas otherwise, in a production setup, this method is never called directly but the {@link
+ * JobScheduler} will internally run the jobs when they are due from its scheduling loop.
+ *
+ * @author Jan Bernitt
  */
-@Configuration
-@Conditional(RedisEnabledCondition.class)
-@EnableRedisHttpSession
-public class RedisSpringSessionConfiguration {
-  @Bean
-  public static ConfigureRedisAction configureRedisAction() {
-    return ConfigureRedisAction.NO_OP;
-  }
+public interface JobRunner {
+
+  boolean isScheduling();
+
+  void runDueJob(JobConfiguration config);
 }

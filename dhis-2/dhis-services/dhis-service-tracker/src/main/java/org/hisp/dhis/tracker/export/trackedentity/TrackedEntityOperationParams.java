@@ -46,9 +46,9 @@ import org.hisp.dhis.tracker.export.Order;
 import org.hisp.dhis.user.User;
 import org.hisp.dhis.webapi.controller.event.mapper.SortDirection;
 
+@Getter
 @Builder(toBuilder = true)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Getter
 public class TrackedEntityOperationParams {
   public static final int DEFAULT_PAGE = 1;
 
@@ -106,8 +106,7 @@ public class TrackedEntityOperationParams {
   /** Tracked entity type to fetch. */
   private String trackedEntityTypeUid;
 
-  @Builder.Default
-  private OrganisationUnitSelectionMode orgUnitMode = OrganisationUnitSelectionMode.DESCENDANTS;
+  private OrganisationUnitSelectionMode orgUnitMode;
 
   @Getter @Builder.Default
   private AssignedUserQueryParam assignedUserQueryParam = AssignedUserQueryParam.ALL;

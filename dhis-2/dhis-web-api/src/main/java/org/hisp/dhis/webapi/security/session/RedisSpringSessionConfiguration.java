@@ -25,34 +25,30 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.leader.election;
+package org.hisp.dhis.webapi.security.session;
 
-import lombok.AllArgsConstructor;
-import org.hisp.dhis.scheduling.Job;
-import org.hisp.dhis.scheduling.JobConfiguration;
-import org.hisp.dhis.scheduling.JobProgress;
-import org.hisp.dhis.scheduling.JobType;
-import org.springframework.stereotype.Component;
+import org.hisp.dhis.condition.RedisEnabledCondition;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.session.data.redis.config.ConfigureRedisAction;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
 /**
- * Job that attempts to elect the current instance as the leader of the cluster.
+ * Configuration registered if {@link RedisEnabledCondition} matches to true. Redis backed Spring
+ * Session will be configured due to the {@link EnableRedisHttpSession} annotation.
  *
- * @author Ameen Mohamed (original)
- * @author Jan Bernitt (job progress tracking)
+ * @author Ameen Mohamed
  */
-@Component
-@AllArgsConstructor
-public class LeaderRenewalJob implements Job {
-  private final LeaderManager leaderManager;
+@Configuration
+@Order(1998)
+@Conditional(RedisEnabledCondition.class)
+@EnableRedisHttpSession
+public class RedisSpringSessionConfiguration {
 
-  @Override
-  public JobType getJobType() {
-    return JobType.LEADER_RENEWAL;
-  }
-
-  @Override
-  public void execute(JobConfiguration jobConfiguration, JobProgress progress) {
-    progress.startingProcess("Elect leader node");
-    progress.endingProcess(progress.runStage(() -> leaderManager.renewLeader(progress)));
+  @Bean
+  public static ConfigureRedisAction configureRedisAction() {
+    return ConfigureRedisAction.NO_OP;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,34 +25,17 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.leader.election;
+package org.hisp.dhis.webapi.webdomain;
 
-import lombok.AllArgsConstructor;
-import org.hisp.dhis.scheduling.Job;
-import org.hisp.dhis.scheduling.JobConfiguration;
-import org.hisp.dhis.scheduling.JobProgress;
-import org.hisp.dhis.scheduling.JobType;
-import org.springframework.stereotype.Component;
+import java.util.List;
+import org.hisp.dhis.query.Order;
 
 /**
- * Job that attempts to elect the current instance as the leader of the cluster.
+ * Record purely used to tidy up code while passing data
  *
- * @author Ameen Mohamed (original)
- * @author Jan Bernitt (job progress tracking)
+ * @param options web options
+ * @param fields fields
+ * @param filters filters
  */
-@Component
-@AllArgsConstructor
-public class LeaderElectionJob implements Job {
-  private final LeaderManager leaderManager;
-
-  @Override
-  public JobType getJobType() {
-    return JobType.LEADER_ELECTION;
-  }
-
-  @Override
-  public void execute(JobConfiguration jobConfiguration, JobProgress progress) {
-    progress.startingProcess("Elect leader node");
-    progress.endingProcess(progress.runStage(() -> leaderManager.electLeader(progress)));
-  }
-}
+public record WebRequestData(
+    WebOptions options, List<String> fields, List<String> filters, List<Order> orders) {}
