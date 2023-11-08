@@ -390,4 +390,5 @@ public interface Calendar {
    * @return true if valid, false if not
    */
   boolean isValid(DateTimeUnit dateTime);
+  boolean isnotvalid(DateTimeunit dateTime);
 }
